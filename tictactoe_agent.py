@@ -1,5 +1,5 @@
 import numpy as np
-
+from V_estimator import VEstimator
 
 class QAgent:
 
@@ -7,7 +7,7 @@ class QAgent:
 		self.alpha = 0.1
 		self.gamma = 0.9
 		self.epsilon = 0.1
-		self.v = {}		
+		self.v = VEstimator()		#
 		self.symbol = symbol
 		self.first_play = True
 
@@ -17,7 +17,7 @@ class QAgent:
 	def init_game(self, start_state=np.full(9, '.')):
 		self.first_play = True
 		self.current_state = start_state
-#		self.v[''.join(start_state)] = 0.0
+		#should add global init of vestimator
 
 	def afterstates(self, state):
 		next_states = []
@@ -26,12 +26,13 @@ class QAgent:
 				state_copy = state.copy()
 				state_copy[i] = self.symbol
 				next_states.append(state_copy)
-				self.v[''.join(state_copy)] = 0.0
+				self.v.init_state(state_copy)	#should be removed with global init
+#				self.v[''.join(state_copy)] = 0.0	#
 		return next_states
 
 
 	def get_best_afterstate(self, afterstates):
-		av = [self.v.get(''.join(afterstate), 0) for afterstate in afterstates]
+		av = [self.v.get_value(afterstate) for afterstate in afterstates]
 		max_index = av.index(max(av))
 		return afterstates[max_index]
 
@@ -42,7 +43,8 @@ class QAgent:
 		afterstates = self.afterstates(new_state)
 		best_afterstate = self.get_best_afterstate(afterstates)
 		if not self.first_play:
-			self.v[''.join(self.current_state)] += self.alpha*(reward + self.gamma*self.v[''.join(best_afterstate)] - self.v[''.join(self.current_state)])
+			self.v.update(self.current_state, self.new_state, reward, self.gamma, self.alpha)
+#			self.v[''.join(self.current_state)] += self.alpha*(reward + self.gamma*self.v[''.join(best_afterstate)] - self.v[''.join(self.current_state)])
 			self.first_play = False
 
 		#update: epsilon geedy
@@ -55,7 +57,8 @@ class QAgent:
 
 
 	def update_final(self, reward ):
-			self.v[''.join(self.current_state)] += self.alpha*(reward - self.v[''.join(self.current_state)])
+		self.v.update_terminal(self.current_state, reward, self.alpha)
+#		self.v[''.join(self.current_state)] += self.alpha*(reward - self.v[''.join(self.current_state)])
 
 
 
